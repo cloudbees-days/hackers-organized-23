@@ -69,6 +69,16 @@ jobs:
           file-path: container-image.tar
           file-type: BINARY_CONTAINER
           debug: "true"
+      - name: Publish evidence
+        uses: cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Built and pushed image to docker hub
+            
+            [Docker Hub](https://hub.docker.com/repository/docker/ldonleycb/hackers-organized/tags)
+            
+            Deployed hackers-organized:${{ cloudbees.scm.sha }}
+          format: MARKDOWN
     needs: test
   scan:
     outputs:
@@ -121,26 +131,23 @@ jobs:
           MAJOR_COUNT=$(jq '[.issues[] | select(.severity=="MAJOR")] | length' sonar-issues.json)
           MINOR_COUNT=$(jq '[.issues[] | select(.severity=="MINOR")] | length' sonar-issues.json)
           
-          echo "BLOCKER_COUNT | ${BLOCKER_COUNT}" >> $CLOUDBEES_OUTPUTS/BLOCKER_COUNT
-          echo "CRITICAL_COUNT | ${CRITICAL_COUNT}" >> $CLOUDBEES_OUTPUTS/CRITICAL_COUNT
-          echo "MAJOR_COUNT | ${MAJOR_COUNT}" >> $CLOUDBEES_OUTPUTS/MAJOR_COUNT
-          echo "MINOR_COUNT | ${MINOR_COUNT}" >> $CLOUDBEES_OUTPUTS/MINOR_COUNT
+          echo "${BLOCKER_COUNT}" >> $CLOUDBEES_OUTPUTS/BLOCKER_COUNT
+          echo "${CRITICAL_COUNT}" >> $CLOUDBEES_OUTPUTS/CRITICAL_COUNT
+          echo "${MAJOR_COUNT}" >> $CLOUDBEES_OUTPUTS/MAJOR_COUNT
+          echo "${MINOR_COUNT}" >> $CLOUDBEES_OUTPUTS/MINOR_COUNT
       - name: Publish evidence
         uses: cloudbees-io/publish-evidence-item@v1
         with:
-          content: |
+          content: |-
             ## SonarQube Analysis Results
             
-            | Severity And Issue Count |
-            |------------------------|
-            
-            |  ${{ steps.FetchSonarQubeIssues.outputs.BLOCKER_COUNT }} |
-            
-            | ${{ steps.FetchSonarQubeIssues.outputs.CRITICAL_COUNT }} |
-            
-            | ${{ steps.FetchSonarQubeIssues.outputs.MAJOR_COUNT }} |
-            
-            |  ${{ steps.FetchSonarQubeIssues.outputs.MINOR_COUNT }} |
+            | Severity             | Issue Count |
+            |----------------------|-------------|
+            | BLOCKER_COUNT        | ${{ steps.FetchSonarQubeIssues.outputs.BLOCKER_COUNT }} |
+            | CRITICAL_COUNT       | ${{ steps.FetchSonarQubeIssues.outputs.CRITICAL_COUNT }} |
+            | MAJOR_COUNT          | ${{ steps.FetchSonarQubeIssues.outputs.MAJOR_COUNT }} |
+            | MINOR_COUNT          | ${{ steps.FetchSonarQubeIssues.outputs.MINOR_COUNT }} |
+          format: MARKDOWN
   deploy:
     environment: DOW Production
     steps:
@@ -157,6 +164,15 @@ jobs:
           kustomization-base-dir: ${{ cloudbees.workspace }}/k8s/base
           kustomization-overlays-dir: ${{ cloudbees.workspace }}/k8s/overlays/prod
           environment-variables: '{}'
+      - name: Publish evidence
+        uses: cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Deployed environment
+            [Production frontend](https://hackers-organized.preview.cb-demos.io/)
+            
+            Running hackers-organized:${{ cloudbees.scm.sha }}
+          format: MARKDOWN
     needs:
       - build-container-image
       - scan
